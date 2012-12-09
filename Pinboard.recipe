@@ -1,0 +1,66 @@
+#!/usr/bin/env python
+
+__license__ = 'GPL v3'
+__copyright__ = '2012, Jim DeVona'
+__website__ = 'https://github.com/anoved/Pinboard-Recipe'
+
+#
+# Find your Pinboard API Token at https://pinboard.in/settings/password
+# It will look something like apitoken = 'username:5CABE73682AAA9856010'
+#
+apitoken = ''
+
+#
+# If delete_bookmarks is False, bookmarks will be deleted once retrieved.
+# If delete_bookmarks is True, they will be marked as read instead.
+#
+delete_bookmarks = False
+
+from calibre.web.feeds.news import BasicNewsRecipe
+import urllib
+import json
+
+class PinboardRecipe(BasicNewsRecipe):
+	
+	title = 'Pinboard Bookmarks'
+	description = 'Generate an ebook of unread Pinboard bookmarks.'
+	__author__ = 'Jim DeVona'
+	
+	auto_cleanup = True
+	no_stylesheets = True
+	remove_javascript = True
+	
+	def parse_index(self):
+		
+		if len(apitoken) == 0:
+			self.abort_recipe_processing('Pinboard recipe must be configured with your Pinboard API token.')
+		
+		# Request all bookmarks marked as unread. Try adding 'tags' to params...
+		params = urllib.urlencode({'toread': 'yes', 'format': 'json', 'auth_token': apitoken})
+		pbfile = urllib.urlopen('https://api.pinboard.in/v1/posts/all?' + params)
+		bookmarks = json.loads(pbfile.read())
+		
+		if len(bookmarks) == 0:
+			self.abort_recipe_processing('No unread Pinboard bookmarks.')
+		
+		articles = []
+		for bookmark in bookmarks:
+			articles.append({
+					'title': bookmark['description'],
+					'url': bookmark['href'],
+					'description': bookmark['extended'],
+					'date': bookmark['time']})
+			
+			if delete_bookmarks:
+				params = urllib.urlencode({'url': bookmark['href'], 'auth_token': apitoken})
+				urllib.urlopen('https://api.pinboard.in/v1/posts/delete?' + params)
+			else:
+				# Mark bookmark as read by re-posting with 'toread' set to 'no'.
+				params = urllib.urlencode({
+						'url': bookmark['href'], 'description': bookmark['description'],
+						'extended': bookmark['extended'], 'tags': bookmark['tags'],
+						'dt': bookmark['time'], 'shared': bookmark['shared'],
+						'replace': 'yes', 'toread': 'no', 'auth_token': apitoken})
+				urllib.urlopen('https://api.pinboard.in/v1/posts/add?' + params)
+				
+		return [('Pinboard Bookmarks', articles)]
