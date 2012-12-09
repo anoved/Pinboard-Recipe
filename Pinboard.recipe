@@ -11,8 +11,8 @@ __website__ = 'https://github.com/anoved/Pinboard-Recipe'
 apitoken = ''
 
 #
-# If delete_bookmarks is False, bookmarks will be deleted once retrieved.
-# If delete_bookmarks is True, they will be marked as read instead.
+# If delete_bookmarks is True, bookmarks will be deleted once retrieved.
+# If delete_bookmarks is False, they will just be marked as read instead.
 #
 delete_bookmarks = False
 
