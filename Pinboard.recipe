@@ -16,6 +16,18 @@ apitoken = ''
 #
 delete_bookmarks = False
 
+
+#
+# How many articles to pull at most? Set to False for no checks.
+#
+max_articles = 15
+
+#
+# Should processed articles receive a tag? If so, set the tag:
+#
+processed_tag = 'calibre-recipe'
+
+
 from calibre.web.feeds.news import BasicNewsRecipe
 import urllib
 import json
@@ -42,25 +54,39 @@ class PinboardRecipe(BasicNewsRecipe):
 		
 		if len(bookmarks) == 0:
 			self.abort_recipe_processing('No unread Pinboard bookmarks.')
-		
+
+                successful_bookmark_reads = 0
 		articles = []
 		for bookmark in bookmarks:
-			articles.append({
+                        try:
+                                urllib.urlopen(bookmark['href'])
+
+                                articles.append({
 					'title': bookmark['description'],
 					'url': bookmark['href'],
 					'description': bookmark['extended'],
 					'date': bookmark['time']})
 			
-			if delete_bookmarks:
-				params = urllib.urlencode({'url': bookmark['href'], 'auth_token': apitoken})
-				urllib.urlopen('https://api.pinboard.in/v1/posts/delete?' + params)
-			else:
-				# Mark bookmark as read by re-posting with 'toread' set to 'no'.
-				params = urllib.urlencode({
+                                if delete_bookmarks:
+                                        params = urllib.urlencode({'url': bookmark['href'], 'auth_token': apitoken})
+                                        urllib.request.urlopen('https://api.pinboard.in/v1/posts/delete?' + params)
+                                else:
+                                        if processed_tag:
+                                                bookmark['tags'] += ' {}'.format(processed_tag)
+
+                                        # Mark bookmark as read by re-posting with 'toread' set to 'no'.
+                                        params = urllib.urlencode({
 						'url': bookmark['href'], 'description': bookmark['description'],
 						'extended': bookmark['extended'], 'tags': bookmark['tags'],
 						'dt': bookmark['time'], 'shared': bookmark['shared'],
 						'replace': 'yes', 'toread': 'no', 'auth_token': apitoken})
-				urllib.urlopen('https://api.pinboard.in/v1/posts/add?' + params)
+                                        urllib.urlopen('https://api.pinboard.in/v1/posts/add?' + params)
+
+                                successful_bookmark_reads += 1
+                                if max_articles and successful_bookmark_reads >= max_articles:
+                                        break
+
+                        except IOError:
+                                continue
 				
 		return [('Pinboard Bookmarks', articles)]
