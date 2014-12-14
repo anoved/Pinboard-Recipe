@@ -15,6 +15,8 @@ Setup
 - In Calibre, select _Add a custom news source_ from the _Fetch news_ toolbar button or menu. Click _Load recipe from file_ and select the [`Pinboard.recipe`](https://raw.github.com/anoved/Pinboard-Recipe/master/Pinboard.recipe) file downloaded from this repository.
 - Locate your [Pinboard API Token](https://pinboard.in/settings/password) and paste it into the _Pinboard Bookmarks_ source code as the `apitoken` value (indicated near the top of the script).
 - By default, your unread bookmarks are marked as read once retrieved. If you would prefer to delete them instead, set the `delete_bookmarks` variable to `True`.
+- By default, 15 links will be pulled per run. To pull all links, set the `max_articles` variable to `False`.
+- By default, any links processed will receive a new tag, `calibre-recipe`. To change or remove this tag, set the `processed_tag` variable to False or a different string.
 - Click _Add/Update recipe_ and click _Yes_ to confirm that you want to update ("replace") the recipe.
 
 Now when you click _Fetch News_ you can choose _Pinboard Bookmarks_ from the _Custom_ section of the recipe list.
